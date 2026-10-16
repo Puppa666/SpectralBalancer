@@ -1,0 +1,61 @@
+name: Build VST3 Plugins
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_name: SpectralBalancer-Windows-VST3
+            build_dir: build/SpectralBalancer_artefacts/Release/VST3
+          - os: macos-13
+            artifact_name: SpectralBalancer-macOS-VST3
+            build_dir: build/SpectralBalancer_artefacts/Release/VST3
+          - os: ubuntu-22.04
+            artifact_name: SpectralBalancer-Linux-VST3
+            build_dir: build/SpectralBalancer_artefacts/Release/VST3
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Linux Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libjack-jackd2-dev \
+            ladspa-sdk libcurl4-openssl-dev libfreetype6-dev \
+            libx11-dev libxcomposite-dev libxcursor-dev libxcursor-dev \
+            libxext-dev libxinerama-dev libxrandr-dev libxrender-dev \
+            mesa-common-dev libgl1-mesa-dev libglu1-mesa-dev ninja-build
+
+      - name: Set up Ninja
+        uses: ashutoshvarma/setup-ninja@master
+        with:
+          version: 1.11.1
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build VST3 Target
+        run: |
+          cmake --build build --config Release --target SpectralBalancer_VST3
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.build_dir }}
