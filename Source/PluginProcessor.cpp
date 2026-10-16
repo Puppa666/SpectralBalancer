@@ -22,6 +22,18 @@ juce::AudioProcessorValueTreeState::ParameterLayout SpectralBalancerAudioProcess
     return { params.begin(), params.end() };
 }
 
+bool SpectralBalancerAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
+{
+    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
+     && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+        return false;
+
+    if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
+        return false;
+
+    return true;
+}
+
 void SpectralBalancerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     juce::dsp::ProcessSpec spec;
@@ -30,7 +42,6 @@ void SpectralBalancerAudioProcessor::prepareToPlay(double sampleRate, int sample
     spec.numChannels = 1;
 
     hpfLeft.reset(); hpfRight.reset();
-    // ASSEGNAZIONE DIRETTA DEL PUNTATORE (senza asterisco iniziale):
     hpfLeft.coefficients = FilterCoefs::makeHighPass(sampleRate, 30.0f);
     hpfRight.coefficients = FilterCoefs::makeHighPass(sampleRate, 30.0f);
 
@@ -84,7 +95,6 @@ void SpectralBalancerAudioProcessor::performSpectralAnalysis()
         bandLevels[i] = count > 0 ? (sum / count) : 0.001f;
     }
 
-    // Auto Sub HPF
     int subMaxBin = std::max(1, (int)(60.0f / binHz));
     float subSum = 0.0f;
     for (int s = 1; s <= subMaxBin; ++s) subSum += fftData[s];
@@ -94,7 +104,6 @@ void SpectralBalancerAudioProcessor::performSpectralAnalysis()
     else if (subAvg > 15.0f) currentHpf = 65.0f;
     else currentHpf = 30.0f;
 
-    // Normalizzazione a 1 kHz e calcolo Tilt Target
     float ref1k = (bandLevels[2] + bandLevels[3]) * 0.5f;
     ref1k = std::max(0.0001f, ref1k);
 
@@ -122,7 +131,6 @@ void SpectralBalancerAudioProcessor::processBlock(juce::AudioBuffer<float>& buff
 
     float amount = *apvts.getRawParameterValue("amount") / 100.0f;
 
-    // Sidechain Feed: push samples in mono into FIFO for analysis
     auto* channelDataLeft = buffer.getReadPointer(0);
     auto* channelDataRight = totalNumInputChannels > 1 ? buffer.getReadPointer(1) : channelDataLeft;
 
@@ -136,7 +144,6 @@ void SpectralBalancerAudioProcessor::processBlock(juce::AudioBuffer<float>& buff
         performSpectralAnalysis();
         nextFFTBlockReady = false;
 
-        // Aggiorna filtri IIR
         double sr = getSampleRate();
         hpfLeft.coefficients = FilterCoefs::makeHighPass(sr, currentHpf);
         hpfRight.coefficients = FilterCoefs::makeHighPass(sr, currentHpf);
@@ -151,7 +158,6 @@ void SpectralBalancerAudioProcessor::processBlock(juce::AudioBuffer<float>& buff
         }
     }
 
-    // Processamento Wet
     juce::AudioBuffer<float> dryCopy;
     dryCopy.makeCopyOf(buffer);
 
@@ -169,7 +175,6 @@ void SpectralBalancerAudioProcessor::processBlock(juce::AudioBuffer<float>& buff
             r = peqRight[b].processSample(r);
         }
 
-        // Wet / Dry blend
         buffer.setSample(0, i, dryCopy.getSample(0, i) * (1.0f - amount) + l * amount);
         if (totalNumInputChannels > 1)
             buffer.setSample(1, i, dryCopy.getSample(1, i) * (1.0f - amount) + r * amount);
@@ -185,40 +190,18 @@ void SpectralBalancerAudioProcessor::getStateInformation(juce::MemoryBlock& dest
 {
     auto state = apvts.copyState();
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
-    copyXmlToBinary(*xml, destData);
+    if (xml != nullptr)
+        copyXmlToBinary(*xml, destData);
 }
 
 void SpectralBalancerAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
     std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
-    if (xmlState && xmlState->hasTagName(apvts.state.getType()))
+    if (xmlState != nullptr && xmlState->hasTagName(apvts.state.getType()))
         apvts.replaceState(juce::ValueTree::fromXml(*xmlState));
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new SpectralBalancerAudioProcessor();
-}
-bool isBusesLayoutSupported (const BusesLayout& layouts) const
-{
-    // Supporta solo Stereo-in -> Stereo-out o Mono-in -> Mono-out
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-     && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
-        return false;
-
-    if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
-        return false;
-
-    return true;
-}
-bool SpectralBalancerAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
-{
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-     && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
-        return false;
-
-    if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
-        return false;
-
-    return true;
 }
