@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
 project(SpectralBalancer VERSION 1.0.0 LANGUAGES C CXX)
 
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Incorpora tutti i runtime C++ dentro il plugin (elimina l'errore 126 su Windows)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 include(FetchContent)
 FetchContent_Declare(
