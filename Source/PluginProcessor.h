@@ -9,8 +9,8 @@ public:
 
     void prepareToPlay(double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
+    bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
-    bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
 
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override { return true; }
@@ -36,7 +36,6 @@ public:
 private:
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
-    // DSP DSP Filters
     static constexpr int numBands = 6;
     const float bandFrequencies[numBands] = { 200.0f, 400.0f, 800.0f, 1600.0f, 3200.0f, 6400.0f };
     const float targetOffsets[numBands] = {
@@ -55,7 +54,6 @@ private:
     std::array<Filter, numBands> peqLeft;
     std::array<Filter, numBands> peqRight;
 
-    // FFT Sidechain Engine (4096 bins)
     static constexpr int fftOrder = 12;
     static constexpr int fftSize = 1 << fftOrder;
     juce::dsp::FFT forwardFFT;
@@ -65,7 +63,6 @@ private:
     int fifoIndex = 0;
     bool nextFFTBlockReady = false;
 
-    // Smoothing & Logic
     juce::SmoothedValue<float> smoothedCorrections[numBands];
     float currentHpf = 30.0f;
 
