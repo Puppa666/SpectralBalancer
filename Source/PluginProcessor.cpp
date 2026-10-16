@@ -199,7 +199,7 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new SpectralBalancerAudioProcessor();
 }
-bool isBusesLayoutSupported (const BusesLayout& layouts) const override
+bool isBusesLayoutSupported (const BusesLayout& layouts) const
 {
     // Supporta solo Stereo-in -> Stereo-out o Mono-in -> Mono-out
     if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
