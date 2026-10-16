@@ -30,15 +30,16 @@ void SpectralBalancerAudioProcessor::prepareToPlay(double sampleRate, int sample
     spec.numChannels = 1;
 
     hpfLeft.reset(); hpfRight.reset();
-    *hpfLeft.coefficients = *FilterCoefs::makeHighPass(sampleRate, 30.0f);
-    *hpfRight.coefficients = *FilterCoefs::makeHighPass(sampleRate, 30.0f);
+    // ASSEGNAZIONE DIRETTA DEL PUNTATORE (senza asterisco iniziale):
+    hpfLeft.coefficients = FilterCoefs::makeHighPass(sampleRate, 30.0f);
+    hpfRight.coefficients = FilterCoefs::makeHighPass(sampleRate, 30.0f);
 
     for (int i = 0; i < numBands; ++i)
     {
         peqLeft[i].reset(); peqRight[i].reset();
         auto coefs = FilterCoefs::makePeakFilter(sampleRate, bandFrequencies[i], 1.2f, 1.0f);
-        *peqLeft[i].coefficients = *coefs;
-        *peqRight[i].coefficients = *coefs;
+        peqLeft[i].coefficients = coefs;
+        peqRight[i].coefficients = coefs;
         smoothedCorrections[i].reset(sampleRate, 0.08);
     }
 }
@@ -137,16 +138,16 @@ void SpectralBalancerAudioProcessor::processBlock(juce::AudioBuffer<float>& buff
 
         // Aggiorna filtri IIR
         double sr = getSampleRate();
-        *hpfLeft.coefficients = *FilterCoefs::makeHighPass(sr, currentHpf);
-        *hpfRight.coefficients = *FilterCoefs::makeHighPass(sr, currentHpf);
+        hpfLeft.coefficients = FilterCoefs::makeHighPass(sr, currentHpf);
+        hpfRight.coefficients = FilterCoefs::makeHighPass(sr, currentHpf);
 
         for (int b = 0; b < numBands; ++b)
         {
             float targetGainDb = smoothedCorrections[b].getNextValue() * amount;
             float gainFactor = juce::Decibels::decibelsToGain(targetGainDb);
             auto coefs = FilterCoefs::makePeakFilter(sr, bandFrequencies[b], 1.2f, gainFactor);
-            *peqLeft[b].coefficients = *coefs;
-            *peqRight[b].coefficients = *coefs;
+            peqLeft[b].coefficients = coefs;
+            peqRight[b].coefficients = coefs;
         }
     }
 
