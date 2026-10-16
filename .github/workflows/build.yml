@@ -31,13 +31,18 @@ jobs:
         with:
           submodules: recursive
 
+      # Forza il compilatore nativo Visual C++ (MSVC) su Windows
+      - name: Set up MSVC
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Install Linux Dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libasound2-dev libjack-jackd2-dev \
             ladspa-sdk libcurl4-openssl-dev libfreetype6-dev \
-            libx11-dev libxcomposite-dev libxcursor-dev libxcursor-dev \
+            libx11-dev libxcomposite-dev libxcursor-dev \
             libxext-dev libxinerama-dev libxrandr-dev libxrender-dev \
             mesa-common-dev libgl1-mesa-dev libglu1-mesa-dev ninja-build
 
