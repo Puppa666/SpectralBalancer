@@ -45,6 +45,8 @@ target_compile_definitions(SpectralBalancer PRIVATE
 target_link_libraries(SpectralBalancer PRIVATE
     juce::juce_audio_utils
     juce::juce_dsp
+    juce::juce_gui_basics
+    juce::juce_gui_extra
 )
 
 juce_generate_juce_header(SpectralBalancer)
