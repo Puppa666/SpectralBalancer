@@ -283,8 +283,8 @@ void SpectralBalancerAudioProcessorEditor::paint(juce::Graphics& g)
         const float dashLengths[] = { 5.0f, 4.0f };
         juce::Path dashedTargetPath;
         juce::PathStrokeType targetStroke(1.8f);
-        targetStroke.createDashedPath(dashedTargetPath, targetPath, dashLengths, 2);
-        g.strokePath(dashedTargetPath, targetStroke);
+        targetStroke.createDashedStroke(dashedTargetPath, targetPath, dashLengths, 2);
+        g.fillPath(dashedTargetPath);
 
         // Filter EQ Response Curve (white line centered at baseY)
         const float baseY = canvasY + canvasH * 0.28f;
