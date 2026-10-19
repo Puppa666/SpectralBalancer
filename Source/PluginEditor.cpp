@@ -281,8 +281,10 @@ void SpectralBalancerAudioProcessorEditor::paint(juce::Graphics& g)
         }
         g.setColour(juce::Colour(0xa010b981));
         const float dashLengths[] = { 5.0f, 4.0f };
-        g.strokePath(targetPath, juce::PathStrokeType(1.8f, juce::PathStrokeType::mitered, juce::PathStrokeType::butt),
-                     nullptr, 0, dashLengths, 2);
+        juce::Path dashedTargetPath;
+        juce::PathStrokeType targetStroke(1.8f);
+        targetStroke.createDashedPath(dashedTargetPath, targetPath, dashLengths, 2);
+        g.strokePath(dashedTargetPath, targetStroke);
 
         // Filter EQ Response Curve (white line centered at baseY)
         const float baseY = canvasY + canvasH * 0.28f;
@@ -306,12 +308,9 @@ void SpectralBalancerAudioProcessorEditor::paint(juce::Graphics& g)
         // HPF Cutoff Marker Line (amber dashed vertical line)
         float hpfCut = isAutoHpf ? audioProcessor.getHpfCutoff() : *audioProcessor.apvts.getRawParameterValue("hpfManual");
         float hpfX = freqToX(hpfCut, canvasX, canvasW);
-        juce::Path hpfLine;
-        hpfLine.startNewSubPath(hpfX, canvasY);
-        hpfLine.lineTo(hpfX, canvasY + canvasH);
         g.setColour(juce::Colour(0xccf59e0b));
         const float hpfDashes[] = { 3.0f, 3.0f };
-        g.strokePath(hpfLine, juce::PathStrokeType(1.5f), nullptr, 0, hpfDashes, 2);
+        g.drawDashedLine(juce::Line<float>(hpfX, canvasY, hpfX, canvasY + canvasH), hpfDashes, 2, 1.5f);
     }
 
     g.setColour(juce::Colour(0xff27272a));
